@@ -1,24 +1,109 @@
-.hidden {
-  display: none;
+let students = {};
+let teachers = { "admin": "1234" }; // Teacher login credentials
+
+function showTeacherLogin() {
+  document.getElementById('teacherLogin').classList.remove('hidden');
+  document.getElementById('studentLogin').classList.add('hidden');
 }
 
-body {
-  font-family: Arial, sans-serif;
-  text-align: center;
+function showStudentLogin() {
+  document.getElementById('studentLogin').classList.remove('hidden');
+  document.getElementById('teacherLogin').classList.add('hidden');
 }
 
-table {
-  width: 80%;
-  margin: auto;
-  border-collapse: collapse;
+function loginTeacher() {
+  const username = document.getElementById('teacherUsername').value;
+  const password = document.getElementById('teacherPassword').value;
+
+  if (teachers[username] && password === teachers[username]) {
+    document.getElementById('teacherDashboard').classList.remove('hidden');
+    document.getElementById('loginSelection').classList.add('hidden');
+  } else {
+    alert("Invalid Username or Password!");
+  }
 }
 
-th, td {
-  border: 1px solid black;
-  padding: 10px;
+function loginStudent() {
+  const usn = document.getElementById('studentUSN').value;
+  const password = document.getElementById('studentPassword').value;
+
+  if (students[usn] && password === "0001") {
+    document.getElementById('studentDashboard').classList.remove('hidden');
+    document.getElementById('loginSelection').classList.add('hidden');
+
+    const student = students[usn];
+    document.getElementById('studentInfo').innerHTML = `
+      <p><strong>Name:</strong> ${student.name}</p>
+      <p><strong>Attendance:</strong> ${student.attendancePercentage.toFixed(2)}%</p>
+      <p><strong>Backlogs:</strong> ${student.backlogs.join(", ") || "None"}</p>
+    `;
+
+    renderStudentChart(usn);
+  } else {
+    alert("Invalid USN or Password!");
+  }
 }
 
-button {
-  margin-top: 10px;
-  padding: 5px 10px;
+function addStudent() {
+  const usn = document.getElementById('usn').value;
+  const name = document.getElementById('name').value;
+  const totalClasses = parseInt(document.getElementById('totalClasses').value);
+  const presentClasses = parseInt(document.getElementById('presentClasses').value);
+  const attendancePercentage = (presentClasses / totalClasses) * 100 || 0;
+
+  const marks = {
+    hi: parseInt(document.getElementById('hi').value),
+    hu: parseInt(document.getElementById('hu').value),
+    me: parseInt(document.getElementById('me').value),
+    mu: parseInt(document.getElementById('mu').value),
+    jj: parseInt(document.getElementById('jj').value),
+  };
+
+  const backlogs = Object.entries(marks)
+    .filter(([subject, mark]) => mark < 40)
+    .map(([subject]) => subject.toUpperCase());
+
+  students[usn] = { name, attendancePercentage, marks, backlogs, password: "0001" };
+
+  updateTable();
+  updateChart();
+}
+
+function updateTable() {
+  const table = document.getElementById('studentTable');
+  table.innerHTML = `
+    <tr>
+      <th>USN</th>
+      <th>Name</th>
+      <th>Attendance (%)</th>
+      <th>Backlogs</th>
+      <th>Action</th>
+    </tr>
+  `;
+
+  Object.entries(students).forEach(([usn, student]) => {
+    const row = table.insertRow();
+    row.innerHTML = `
+      <td>${usn}</td>
+      <td>${student.name}</td>
+      <td>${student.attendancePercentage.toFixed(2)}%</td>
+      <td>${student.backlogs.join(", ") || "None"}</td>
+      <td><button onclick="deleteStudent('${usn}')">Delete</button></td>
+    `;
+  });
+}
+
+function renderStudentChart(usn) {
+  const ctx = document.getElementById('studentAttendanceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ["Attendance"],
+      datasets: [{
+        label: 'Attendance (%)',
+        data: [students[usn].attendancePercentage],
+        backgroundColor: 'green'
+      }]
+    }
+  });
 }
